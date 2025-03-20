@@ -1,8 +1,9 @@
 
-CANVAS_WIDTH = 100
-CANVAS_HEIGHT = 100
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 800
+CANVAS_WIDTH = 50
+CANVAS_HEIGHT = 50
+WINDOW_WIDTH = 500
+WINDOW_HEIGHT = 500
+FPS = 15
 
 local simulationGrid = {}
 
@@ -162,6 +163,16 @@ end
 
 function love.update(dt)
 
+    if(started) then
+        if(FPS ~= 0) then 
+            local frameTime = 1/FPS
+            local sleepTime = frameTime-dt
+            if(sleepTime > 0) then
+                love.timer.sleep(sleepTime)
+            end
+        end
+    end
+    
     --! Getting mouse pos
     mousePos.x, mousePos.y = love.mouse.getPosition()
     -- if(mousePos.x > )
@@ -188,7 +199,6 @@ function love.update(dt)
 
     DisplayGrid(simulationGrid, SimulationData)
 
-    
 end 
 
 --!-------------------------------------------------------------------
