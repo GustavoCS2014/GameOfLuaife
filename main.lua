@@ -1,14 +1,15 @@
 
 CANVAS_WIDTH = 50
 CANVAS_HEIGHT = 50
-WINDOW_WIDTH = 500
+WINDOW_WIDTH = 500  
 WINDOW_HEIGHT = 500
-FPS = 15
+FPS = 30
 
 local simulationGrid = {}
 
 
 local simulationCanvas
+local PreviousSimulation
 local finalCanvas
 local started = false
 local mousePos = {}
@@ -226,34 +227,38 @@ function love.draw()
     local simulationImage = love.graphics.newImage(SimulationData)
 
     --! First Render pass
+    love.graphics.setBackgroundColor(0.1, 0.1, 0.12,1)
     love.graphics.setCanvas(finalCanvas)
     love.graphics.clear()--clear display
-    love.graphics.setBackgroundColor(0.286, 0.31, 0.31,1)
     --draw any stuff here
     
     
     
+    if(not started) then
+        
+        love.graphics.setColor(.3,.3,.3,.3)
+        -- if not showFinalGraphic then
+        for x = 1, CANVAS_WIDTH do
+            love.graphics.line(x * (WidthRatio), 0,x * (WidthRatio),CANVAS_HEIGHT*HeightRatio)
+        end
     
-    
-    love.graphics.setColor(.3,.3,.3,.3)
-    -- if not showFinalGraphic then
-    for x = 1, CANVAS_WIDTH do
-        love.graphics.line(x * (WidthRatio), 0,x * (WidthRatio),CANVAS_HEIGHT*HeightRatio)
+        for y = 1, CANVAS_HEIGHT do
+            love.graphics.line(0, y * (HeightRatio), CANVAS_WIDTH*WidthRatio, y * (HeightRatio))
+        end
     end
 
-    for y = 1, CANVAS_HEIGHT do
-        love.graphics.line(0, y * (HeightRatio), CANVAS_WIDTH*WidthRatio, y * (HeightRatio))
+    if(PreviousSimulation~= nil) then
+        love.graphics.setColor(1,0.8,0.8,0.96)
+        love.graphics.draw(PreviousSimulation)        
     end
-
+    
     love.graphics.setColor(1,1,1,1)
-
     love.graphics.draw(simulationImage, SimulationTransform)        
     -- love.graphics.draw(pixelCanvas, 0,0, 0, CanvasScaling)
-
     love.graphics.setCanvas()  
-
+    PreviousSimulation = love.graphics.newImage(finalCanvas:newImageData())
+    
     --! Final Render Pass
-
     love.graphics.draw(finalCanvas)
 
     love.graphics.print("mp" .. mpx .. ", " .. mpy, 10 , 10)
