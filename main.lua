@@ -4,7 +4,15 @@ CANVAS_WIDTH = 50
 CANVAS_HEIGHT = 50
 WINDOW_WIDTH = 500  
 WINDOW_HEIGHT = 500
+MOVING = false
 FPS = 30
+
+local mode = {
+    BLEND = 1,
+    BIGGEST = 2
+}
+
+local ComparationMode = mode.BIGGEST
 
 local currentColor = {}
 
@@ -117,10 +125,13 @@ end
 function ScanNeighbours(x,y)
     local aliveNeighbours = 0
     local averageColor = {}
-    averageColor[1] = 0
-    averageColor[2] = 0
-    averageColor[3] = 0
-    averageColor[4] = 0
+    local allColors = {}
+
+
+    averageColor = NewColor(0,0,0,0)
+
+
+
     for i = x-1, x+1 do
         for j = y-1, y+1 do
 
@@ -141,27 +152,41 @@ function ScanNeighbours(x,y)
 
             aliveNeighbours = aliveNeighbours + simulationGrid[tempX][tempY].alive
             if(simulationGrid[tempX][tempY].alive > 0)then
-                averageColor[1] = averageColor[1] + simulationGrid[tempX][tempY].color[1]
-                averageColor[2] = averageColor[2] + simulationGrid[tempX][tempY].color[2]
-                averageColor[3] = averageColor[3] + simulationGrid[tempX][tempY].color[3]
-                averageColor[4] = averageColor[4] + simulationGrid[tempX][tempY].color[4]
+                if(ComparationMode == mode.BLEND) then
+                    averageColor[1] = averageColor[1] + simulationGrid[tempX][tempY].color[1]
+                    averageColor[2] = averageColor[2] + simulationGrid[tempX][tempY].color[2]
+                    averageColor[3] = averageColor[3] + simulationGrid[tempX][tempY].color[3]
+                    averageColor[4] = averageColor[4] + simulationGrid[tempX][tempY].color[4]
+                elseif(ComparationMode == mode.BIGGEST) then
+                    allColors[#allColors+1] = SetColor(simulationGrid[tempX][tempY].color)
+                end 
+                
             end
             
             ::nextNeighbour::
         end
     end
     
-    if(aliveNeighbours > 0) then
+    if(aliveNeighbours > 0 and ComparationMode == mode.BLEND) then
         averageColor[1] = averageColor[1]/aliveNeighbours
         averageColor[2] = averageColor[2]/aliveNeighbours
         averageColor[3] = averageColor[3]/aliveNeighbours
         averageColor[4] = averageColor[4]/aliveNeighbours
+    elseif (ComparationMode == mode.BIGGEST) then
+        if(#allColors > 0) then
+            local tempCol, i  = FindMostFrecuentColor(allColors)
+            -- print(ToString(tempCol))
+            averageColor = SetColor(tempCol)
+        end
     else
         averageColor[1] = 0
         averageColor[2] = 0
         averageColor[3] = 0
         averageColor[4] = 0    
     end
+
+
+    
 
     return aliveNeighbours, averageColor
 
@@ -176,9 +201,8 @@ function love.load()
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT, {resizable = false})
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.filesystem.setIdentity("Game Of Life", false)
-    
 
-    currentColor = newColor(1,1,1,1)
+    currentColor = NewColor(1,1,1,1)
 
     simulationCanvas = love.graphics.newCanvas(CANVAS_WIDTH, CANVAS_HEIGHT)
     SimulationData = simulationCanvas:newImageData()
@@ -226,13 +250,13 @@ function love.update(dt)
         --!Draw shortcut
         if(love.mouse.isDown(1)) then
             simulationGrid[mpx][mpy].alive = 1
-            simulationGrid[mpx][mpy].color = setColor(currentColor)
+            simulationGrid[mpx][mpy].color = SetColor(currentColor)
         end
     
         --!Erase shortcut
         if(love.mouse.isDown(2)) then
             simulationGrid[mpx][mpy].alive = 0
-            simulationGrid[mpx][mpy].color = newColor(0,0,0,0)
+            simulationGrid[mpx][mpy].color = NewColor(0,0,0,0)
         end
     end
 
@@ -321,7 +345,7 @@ function love.keypressed(key, scancode, isrepeat)
         return;
     end
     if(key == "return") then
-        started = true
+        started = not started
         return;
     end
     if(key == "space") then
@@ -331,43 +355,43 @@ function love.keypressed(key, scancode, isrepeat)
         return
     end
     if(key == "1") then
-        currentColor = newColor(1,1,1,1)
+        currentColor = NewColor(1,1,1,1)
         return
     end
     if(key == "2") then
-        currentColor = newColor(0.949, 0.69, 0.165,1)
+        currentColor = NewColor(0.949, 0.69, 0.165,1)
         return
     end
     if(key == "3") then
-        currentColor = newColor(0.812, 0.49, 0.129,1)
+        currentColor = NewColor(0.812, 0.49, 0.129,1)
         return
     end
     if(key == "4") then
-        currentColor = newColor(0.545, 0.788, 0.106,1)
+        currentColor = NewColor(0.545, 0.788, 0.106,1)
         return
     end
     if(key == "5") then
-        currentColor = newColor(0.325, 0.42, 0.153,1)
+        currentColor = NewColor(0.325, 0.42, 0.153,1)
         return
     end
     if(key == "6") then
-        currentColor = newColor(0,0,1,1)
+        currentColor = NewColor(0,0,1,1)
         return
     end
     if(key == "7") then
-        currentColor = newColor(1,1,1,1)
+        currentColor = NewColor(1,1,1,1)
         return
     end
     if(key == "8") then
-        currentColor = newColor(1,1,1,1)
+        currentColor = NewColor(1,1,1,1)
         return
     end
     if(key == "9") then
-        currentColor = newColor(1,1,1,1)
+        currentColor = NewColor(1,1,1,1)
         return
     end
     if(key == "0") then
-        currentColor = newColor(1,1,1,1)
+        currentColor = NewColor(1,1,1,1)
         return
     end
 end
