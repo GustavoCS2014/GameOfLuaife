@@ -1,9 +1,12 @@
+require('utilities')
 
 CANVAS_WIDTH = 50
 CANVAS_HEIGHT = 50
 WINDOW_WIDTH = 500  
 WINDOW_HEIGHT = 500
 FPS = 30
+
+local currentColor = {}
 
 local simulationGrid = {}
 
@@ -20,7 +23,15 @@ function CreateGrid(array)
     for i = 0, CANVAS_WIDTH-1 do
         array[i] = {}
         for j = 0, CANVAS_HEIGHT-1 do
-            array[i][j] = 0
+            array[i][j] = {
+                alive = 0,
+                color = {}
+            }
+            array[i][j].color[1] = 0
+            array[i][j].color[2] = 0
+            array[i][j].color[3] = 0
+            array[i][j].color[4] = 0
+
         end
     end
     return array
@@ -31,8 +42,8 @@ function DisplayGrid(grid, canvasData)
     for i = 0, CANVAS_WIDTH-1 do
         for j = 0, CANVAS_HEIGHT-1 do
             -- print(i.. ", " .. j)
-            if(grid[i][j] == 1) then
-                canvasData:setPixel(i,j,1,1,1,1)
+            if(grid[i][j].alive == 1) then
+                canvasData:setPixel(i,j,grid[i][j].color)
             else
                 canvasData:setPixel(i,j,0,0,0,0)
             end
@@ -47,38 +58,49 @@ function lifeCalculation(grid)
     local cellsAlive = 0
     for x = 0, CANVAS_WIDTH - 1 do
         for y = 0, CANVAS_HEIGHT - 1 do
-            local aliveNeighbours = ScanNeighbours(x,y)
+            local aliveNeighbours, averageColor = ScanNeighbours(x,y)
 
             -- Stay
-            if aliveNeighbours == 2  and grid[x][y] == 1 then
-                newGrid[x][y] = 1
-                if(x == 1 and y == 2) then print("stayed 2, " .. newGrid[x][y]) end
+            if aliveNeighbours == 2  and grid[x][y].alive == 1 then
+                if(x == 1 and y == 2) then print("stayed 2") end
+                newGrid[x][y].alive = 1
+                newGrid[x][y].color = averageColor
                 goto nextLoop
             end
 
-            if aliveNeighbours == 3  and grid[x][y] == 1 then
+            if aliveNeighbours == 3  and grid[x][y].alive == 1 then
                 if(x == 1 and y == 2) then print("stayed 3") end
-                newGrid[x][y] = 1
+                newGrid[x][y].alive = 1
+                newGrid[x][y].color = averageColor
                 goto nextLoop
             end
 
+            -- birth
+            if aliveNeighbours == 3 and grid[x][y].alive == 0 then
+                if(x == 1 and y == 2) then print("Brithed") end
+                newGrid[x][y].alive = 1
+                newGrid[x][y].color = averageColor
+                goto nextLoop
+            end
 
             -- under population
-            if aliveNeighbours < 2 and grid[x][y] == 1 then
+            if aliveNeighbours < 2 and grid[x][y].alive == 1 then
                 if(x == 1 and y == 2) then print("Underpopulated") end
-                newGrid[x][y] = 0
+                newGrid[x][y].alive = 0
+                newGrid[x][y].color[1] = 0
+                newGrid[x][y].color[2] = 0
+                newGrid[x][y].color[3] = 0
+                newGrid[x][y].color[4] = 0
                 goto nextLoop 
             end
             -- over population
-            if aliveNeighbours > 3 and grid[x][y] == 1 then
+            if aliveNeighbours > 3 and grid[x][y].alive == 1 then
                 if(x == 1 and y == 2) then print("Overpopulated") end
-                newGrid[x][y] = 0
-                goto nextLoop
-            end
-            -- birth
-            if aliveNeighbours == 3 and grid[x][y] == 0 then
-                if(x == 1 and y == 2) then print("Brithed") end
-                newGrid[x][y] = 1
+                newGrid[x][y].alive = 0
+                newGrid[x][y].color[1] = 0
+                newGrid[x][y].color[2] = 0
+                newGrid[x][y].color[3] = 0
+                newGrid[x][y].color[4] = 0
                 goto nextLoop
             end
 
@@ -94,7 +116,11 @@ end
 
 function ScanNeighbours(x,y)
     local aliveNeighbours = 0
-
+    local averageColor = {}
+    averageColor[1] = 0
+    averageColor[2] = 0
+    averageColor[3] = 0
+    averageColor[4] = 0
     for i = x-1, x+1 do
         for j = y-1, y+1 do
 
@@ -113,19 +139,31 @@ function ScanNeighbours(x,y)
                 tempY = tempY - (CANVAS_HEIGHT)
             end
 
-            aliveNeighbours = aliveNeighbours + simulationGrid[tempX][tempY]
-            if(x == 1 and y == 2)then
-                print(tempX..", " .. tempY .. "-> " .. simulationGrid[tempX][tempY])
+            aliveNeighbours = aliveNeighbours + simulationGrid[tempX][tempY].alive
+            if(simulationGrid[tempX][tempY].alive > 0)then
+                averageColor[1] = averageColor[1] + simulationGrid[tempX][tempY].color[1]
+                averageColor[2] = averageColor[2] + simulationGrid[tempX][tempY].color[2]
+                averageColor[3] = averageColor[3] + simulationGrid[tempX][tempY].color[3]
+                averageColor[4] = averageColor[4] + simulationGrid[tempX][tempY].color[4]
             end
             
             ::nextNeighbour::
         end
     end
     
-    if(x == 1 and y == 2)then
-        print(aliveNeighbours)
+    if(aliveNeighbours > 0) then
+        averageColor[1] = averageColor[1]/aliveNeighbours
+        averageColor[2] = averageColor[2]/aliveNeighbours
+        averageColor[3] = averageColor[3]/aliveNeighbours
+        averageColor[4] = averageColor[4]/aliveNeighbours
+    else
+        averageColor[1] = 0
+        averageColor[2] = 0
+        averageColor[3] = 0
+        averageColor[4] = 0    
     end
-    return aliveNeighbours
+
+    return aliveNeighbours, averageColor
 
 end
 
@@ -135,10 +173,12 @@ end
 
 function love.load()
     --! Importan Variables
-    love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT, {resizable = true})
+    love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT, {resizable = false})
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.filesystem.setIdentity("Game Of Life", false)
     
+
+    currentColor = newColor(1,1,1,1)
 
     simulationCanvas = love.graphics.newCanvas(CANVAS_WIDTH, CANVAS_HEIGHT)
     SimulationData = simulationCanvas:newImageData()
@@ -185,12 +225,14 @@ function love.update(dt)
     if not started then 
         --!Draw shortcut
         if(love.mouse.isDown(1)) then
-            simulationGrid[mpx][mpy] = 1
+            simulationGrid[mpx][mpy].alive = 1
+            simulationGrid[mpx][mpy].color = setColor(currentColor)
         end
     
         --!Erase shortcut
         if(love.mouse.isDown(2)) then
-            simulationGrid[mpx][mpy] = 0
+            simulationGrid[mpx][mpy].alive = 0
+            simulationGrid[mpx][mpy].color = newColor(0,0,0,0)
         end
     end
 
@@ -211,9 +253,10 @@ function love.resize(w, h)
     WINDOW_WIDTH = w
     
     WidthRatio = WINDOW_WIDTH/CANVAS_WIDTH
-    HeightRatio = WINDOW_HEIGHT  /CANVAS_HEIGHT
+    HeightRatio = WINDOW_HEIGHT/CANVAS_HEIGHT
     
     finalCanvas = love.graphics.newCanvas(w,h)
+    print(WidthRatio..", " .. HeightRatio)
     SimulationTransform:scale(WidthRatio, HeightRatio)
 end
 
@@ -248,7 +291,7 @@ function love.draw()
     end
 
     if(PreviousSimulation~= nil) then
-        love.graphics.setColor(1,0.8,0.8,0.96)
+        love.graphics.setColor(1,1,1,0.96)
         love.graphics.draw(PreviousSimulation)        
     end
     
@@ -262,7 +305,7 @@ function love.draw()
     love.graphics.draw(finalCanvas)
 
     love.graphics.print("mp" .. mpx .. ", " .. mpy, 10 , 10)
-
+    love.graphics.draw(simulationImage, 100, 0)
 end
 
 -- ! -----------------------------------------------------------------------------
@@ -285,5 +328,46 @@ function love.keypressed(key, scancode, isrepeat)
         if(started) then
             simulationGrid = lifeCalculation(simulationGrid)
         end
+        return
+    end
+    if(key == "1") then
+        currentColor = newColor(1,1,1,1)
+        return
+    end
+    if(key == "2") then
+        currentColor = newColor(0.949, 0.69, 0.165,1)
+        return
+    end
+    if(key == "3") then
+        currentColor = newColor(0.812, 0.49, 0.129,1)
+        return
+    end
+    if(key == "4") then
+        currentColor = newColor(0.545, 0.788, 0.106,1)
+        return
+    end
+    if(key == "5") then
+        currentColor = newColor(0.325, 0.42, 0.153,1)
+        return
+    end
+    if(key == "6") then
+        currentColor = newColor(0,0,1,1)
+        return
+    end
+    if(key == "7") then
+        currentColor = newColor(1,1,1,1)
+        return
+    end
+    if(key == "8") then
+        currentColor = newColor(1,1,1,1)
+        return
+    end
+    if(key == "9") then
+        currentColor = newColor(1,1,1,1)
+        return
+    end
+    if(key == "0") then
+        currentColor = newColor(1,1,1,1)
+        return
     end
 end
